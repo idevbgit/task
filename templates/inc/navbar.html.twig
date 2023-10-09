@@ -1,0 +1,19 @@
+ <nav class="navbar navbar-expand-sm navbar-dark bg-primary mb3">
+    <div class="container">
+      {% if project|default(null) %}
+         <div class="navbar-brand">{{ project.getName() }}</div>
+      {% else %}
+         <a href="/" class="navbar-brand">Projects</a>
+      {% endif %}
+      <!--<button class="navbar-toggle" type="button"
+      data-toggle="collapse" data-target="#mobile-nav"></button>-->
+      <span class="navbar-toggle-icoc"></span>
+
+      <div class="navbar-collapse" id="mobile-nav"></div>
+         <ul class="navbar-nav ml-auto">
+            <li class="nav-item">
+               <a href="/" class="nav-link">Home</a>
+            </li>
+         </ul>
+    </div>
+ </nav>

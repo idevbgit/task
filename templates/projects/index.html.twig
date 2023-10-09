@@ -1,0 +1,53 @@
+{% extends 'base.html.twig' %}
+
+{% block title %} My Projects {% endblock %}
+
+{% block body %}
+    <div class='mt-4'>
+        <h4 class='float-start'>Stats</h4>
+        <div class="btn btn-dark float-end" id="statsByMonth">12 months</div>
+        <div class="btn btn-dark float-end me-1" id="statsByDay">30 days</div>
+        <div class="btn btn-dark float-end me-1" id="exportStatsCSV" style='display: none'>Export(CSV)</div>
+    </div>
+    <div>
+        <canvas id="myChart"></canvas>
+    </div>
+
+    {% if projects %}
+        <table class="table table-striped mt-4">
+            <thead>
+                <tr>
+                    <th>Project Name</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for project in projects %}
+                    <tr>
+                        <td>{{ project["name"] }}</td>
+                        <td>
+                            <a href="/project/{{ project["id"] }}">
+                                <div class="btn btn-dark">Show time logs</div>
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No projects to display</p>
+    {% endif %}
+    
+    {{ form(form) }}
+
+    {% if stats %}
+        <script>
+            window.onload = (event) => drawChart(["{{ stats["hoursBy"]|join(',')|replace({",": "\",\""})|raw }}"], [{{ stats["hours"]|join(",") }}], '{{ stats["label"] }}');
+        </script>
+    {% else %}
+    {% endif %}
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    {% include('inc/indexjs.html.twig') %}
+{% endblock %}

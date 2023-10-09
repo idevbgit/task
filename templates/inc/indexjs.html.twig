@@ -1,0 +1,62 @@
+<script>
+    let statsChart, loadingStats = false;
+
+    const drawChart = (labels, hours, label) => {
+        if(statsChart)
+            statsChart.destroy();
+
+        const ctx = document.getElementById('myChart');
+
+        statsChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label,
+                    data: hours,
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+    };
+
+    const updateStats = (type, number) => {
+        if(!loadingStats) {
+            loadingStats = true;
+            
+            fetch(`/stats/${type}/${number}`)
+                .then(r => r.json())
+                .then(d => d.success ? drawChart(d.hoursBy, d.hours, d.label) : console.error("Received incorrect data %j", d))
+                .catch(e => console.error(e))
+                .finally(loadingStats = false)
+        }
+    };
+
+
+    document.addEventListener("click", async e => {
+        const btn = e.target?.id;
+
+        if(btn == "statsByMonth") {
+            updateStats('month', 12)
+            document.getElementById("exportStatsCSV").style.display = 'inline';
+        } else if(btn == "statsByDay") {
+            updateStats('day', 30)
+            document.getElementById("exportStatsCSV").style.display = 'none';
+        } else if(btn == "exportStatsCSV") {
+            fetch(`/stats/csv`)
+                .then(res => res.blob())
+                .then(blob => {
+                    const file = window.URL.createObjectURL(blob);
+                    window.location.assign(file);
+                })
+                .catch(e => console.error(e))
+        }
+    });
+</script>

@@ -1,0 +1,153 @@
+<script>
+    let loading = false;
+    const 
+        showEl = (el, show = true, type = 'inline') => el.style.display = show ? type : 'none',
+        showErrorMessage = (show, mess = '') => {
+            const emess = document.querySelector("#errorMessage");
+            emess.innerHTML = mess;
+            showEl(emess, show, 'block');
+        },
+        showEditForm = (e, show = true) => {
+            const stime = e.querySelector("#start_time");
+            const ftime = e.querySelector("#finish_time");
+            let onlyFinish = true;
+
+            if(stime) {
+                showEl(stime.querySelector('span'), show ? false : true);
+                showEl(stime.querySelector('input'), show ? true : false);
+            }
+            if(ftime.querySelector('span').innerHTML != '-') {
+                showEl(ftime.querySelector('span'), show ? false : true);
+                showEl(ftime.querySelector('input'), show ? true : false);
+            }
+            
+            showEl(show ? e.querySelector("#save-btn") : e.querySelector("#edit-btn"));
+        };
+
+
+    const req = (method, data) => new Promise((resolve, reject) => {
+        const mess = 'Error, something is wrong...';
+        if(!loading) {
+            loading = true;
+
+            fetch('/timelog'+(data.id ? '/'+data.id : ''), {
+                method: method,
+                body: JSON.stringify(data),
+                headers: { "Content-Type": "application/json" }
+            })
+                .then(r => r.json())
+                .then(d => {
+                    if(d.success) {
+                        showErrorMessage(false);
+                        resolve(d);
+                    } else
+                        reject(mess);
+                })
+                .catch(e => {
+                    console.error(e);
+                    reject(mess);
+                })
+                .finally(loading = false)
+        }
+    });
+
+    const timelog = {
+        delete: row => {
+            if(row.querySelector("input[name='finish_time']").value === '-') {
+                showEl(document.querySelector("#stop-btn"), false);
+                showEl(document.querySelector("#start-btn"));
+            }
+            row.remove();
+        },
+        edit: el => {
+            showEl(el, false);
+            showEditForm(el.parentElement.parentElement);
+        },
+        stop: (el, r, id) => {
+            const timelog = document.querySelector("[data-timelog-id='"+el.dataset.id+"']");
+            timelog.querySelector("input[name='finish_time']").value = r.date;
+            timelog.querySelector("#finish_time span").innerHTML = r.date;
+            showEl(el, false);
+            showEl(document.querySelector("#start-btn"));
+        },
+        start: (el, r) => {
+            const table = document.getElementById('timelogs');
+            table.innerHTML = table.innerHTML + `\n\
+            <tr data-timelog-id="${r.id}">\
+                <td id='start_time'>\
+                    <span>${r.date}</span>\
+                    <input class='form-control' name="start_time" style='display: none' value='${r.date}'>\
+                </td>\
+                <td id='finish_time'>\
+                    <span>-</span>\
+                    <input class='form-control' name='finish_time' style='display: none' value='-'>\
+                </td>\
+                <td>\
+                    <div data-id="${r.id}" style='display: none' class="btn btn-dark" id="save-btn">Save</div>\
+                    <div data-id="${r.id}" class="btn btn-dark" id="edit-btn">Edit</div>\
+                    <div data-id="${r.id}" class="btn btn-dark" id="delete-btn">Delete</div>\
+                </td>\
+            </tr>`;
+            showEl(el, false);
+            showEl(document.querySelector("#stop-btn"));
+            document.querySelector("#stop-btn").dataset.id = r.id;
+        },
+        getData: (row, id) => {
+            const ftime = row.querySelector("input[name='finish_time']").value;
+            const data = { 
+                id, start_time: row.querySelector("input[name='start_time']").value
+            };
+            if(ftime != '-')
+                data.finish_time = ftime;
+            
+            return data;
+        },
+        update: (row, data, el) => {
+            showEl(el, false);
+            showEditForm(row, false);
+
+            row.querySelector("#start_time span").innerHTML = data.start_time;
+            if(data.finish_time)
+                row.querySelector("#finish_time span").innerHTML = data.finish_time;
+        }
+    }
+
+    document.addEventListener("click", async e => {
+        const btn = e.target?.id;
+
+        if(btn.includes('btn')) {
+            const row = e.target.parentElement.parentElement;
+            const { id } = e.target?.dataset;
+            try {
+                if(btn == "edit-btn") {
+
+                    timelog.edit(e.target);
+
+                } else if(btn == "delete-btn") {
+
+                    await req('DELETE', { id });
+                    timelog.delete(row);
+
+                } else if(btn == "stop-btn") {
+
+                    const r = await req('POST', { id });
+                    timelog.stop(e.target, r, id);
+
+                } else if(btn == "start-btn") {
+
+                    const r = await req('POST', { project_id: id });
+                    timelog.start(e.target, r);
+
+                } else if(btn == "save-btn") {
+
+                    const d = timelog.getData(row, id);
+                    await req('PATCH', d);
+                    timelog.update(row, d, e.target);
+
+                }
+            } catch(m) {
+                showErrorMessage(true, m)
+            }
+        }
+    })
+</script>

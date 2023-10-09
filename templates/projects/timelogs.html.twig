@@ -1,0 +1,58 @@
+{% extends 'base.html.twig' %}
+
+{% block title %} Timelogs {% endblock %}
+
+{% block body %}
+    
+    <div class="alert alert-danger m-2" id="errorMessage" style='display:none'></div>
+    <table class="table table-striped" id="timelogs">
+        <thead>
+            <tr>
+                <th>Start Time</th>
+                <th>Finish Time</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% if timelogs %}
+                {% for timelog in timelogs %}
+                    <tr data-timelog-id="{{ timelog.getId() }}">
+                        <td id='start_time'>
+                            <span>{{ timelog.getStartTime()|date('Y-m-d H:i:s') }}</span>
+                            <input class='form-control' name="start_time" style='display: none' value='{{ timelog.getStartTime()|date('Y-m-d H:i:s') }}'>
+                        </td>
+                        <td id='finish_time'>
+                            {% if timelog.getFinishTime() %}
+                                <span>{{ timelog.getFinishTime()|date('Y-m-d H:i:s') }}</span>
+                                <input class='form-control' name="finish_time" style='display: none' value='{{ timelog.getFinishTime()|date('Y-m-d H:i:s') }}'>
+                            {% else %}
+                                <span>-</span>
+                                <input class='form-control' name='finish_time' style='display: none' value='-'>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div data-id="{{ timelog.getId() }}" style='display: none' class="btn btn-dark" id="save-btn">Save</div>
+                            <div data-id="{{ timelog.getId() }}" class="btn btn-dark" id="edit-btn">Edit</div>
+                            <div data-id="{{ timelog.getId() }}" class="btn btn-dark" id="delete-btn">Delete</div>
+                        </td>
+                    </tr>
+                {% endfor %}
+            {% else %}
+                <p class='mt-2'>No timelogs to display</p>
+            {% endif %}
+        </tbody>
+    </table>
+
+    {% set lastlog = timelogs ? timelogs[(timelogs|length)-1] : null %}
+    {% set finishTime = lastlog ? lastlog.getFinishTime() : null %}
+
+    {% if lastlog %}
+        <div class="btn btn-dark" id="start-btn" data-id="{{ project.getId() }}" {{ finishTime ? "" : "style='display:none'" }}>Start</div>
+        <div class="btn btn-dark" id="stop-btn" {{ finishTime ? "style='display:none'" : "" }} data-id="{{ lastlog ? lastlog.getId() : "" }}">Stop</div>
+    {% else %}
+        <div class="btn btn-dark" id="start-btn" data-id="{{ project.getId() }}">Start</div>
+        <div class="btn btn-dark" id="stop-btn" style='display:none' data-id="">Stop</div>
+    {% endif %}
+
+    {% include('inc/timelogsjs.html.twig') %}
+{% endblock %}
